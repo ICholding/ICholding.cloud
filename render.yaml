@@ -1,0 +1,8 @@
+services:
+  - type: worker
+    name: openclaw-telegram-janitor
+    env: node
+    plan: starter
+    buildCommand: "npm install"
+    startCommand: "bash scripts/start.sh"
+    autoDeploy: true
