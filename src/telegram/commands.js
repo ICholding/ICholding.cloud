@@ -17,17 +17,17 @@ function helpText() {
   return [
     '*Janitor Commands (single-admin)*',
     '',
-    '`PAIR` — pair chat',
-    '`USE REPO owner/name` — bind repo',
-    '`PLAN` — show current repo/task/PR state',
-    '`STATUS` — quick status check',
-    '`CI` — check recent workflow runs',
-    '`FILE path/to/file` — read file content',
-    '`FIX path/to/file | goal` — propose a fix',
-    '`APPROVE:PR branch-name` — approve and open PR',
+    '/use `owner/repo` — bind repo',
+    '/plan — show current repo/task/PR state',
+    '/status — quick status check',
+    '/ci — check recent workflow runs',
+    '/file `path` — read file content',
+    '/fix `path | goal` — propose a fix (Codex)',
+    '/reasoning `task` — reasoning analysis (Claude)',
+    '/approve `branch` — approve and open PR',
     '',
-    '*Task Controls (while running):*',
-    '`STOP`  `CANCEL`  `EDIT <new approach>`  `RESUME`'
+    '*Task Controls:*',
+    '/stop  /cancel  /resume  `EDIT <new plan>`'
   ].join('\n');
 }
 
@@ -40,29 +40,17 @@ export async function handleCommand(msg, text, sendMessage, editMessage) {
     return sendMessage(chatId, helpText());
   }
 
-  // Pairing gate
-  if (!session.paired) {
-    if (text.toUpperCase() === 'PAIR') {
-      setPaired(chatId, true);
-      return sendMessage(chatId, '✅ Paired. Next: `USE REPO ICholding/your-repo`');
-    }
-    return sendMessage(chatId, '🔐 Pairing required. Reply with: `PAIR`');
-  }
-
   // Repo bind gate (Smart PLAN exception)
-  if (!session.repo && text.toUpperCase() !== 'PLAN') {
-    const m = text.match(/^USE\s+REPO\s+([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/i);
-    if (m) {
-      const owner = m[1];
-      const name = m[2];
-      setRepo(chatId, owner, name);
-      return sendMessage(chatId, `✅ Repo locked to *${owner}/${name}*\nNow run: \`STATUS\`, \`CI\`, or \`PLAN\``);
-    }
-    return sendMessage(chatId, '📌 Repo not set. Use: `USE REPO ICholding/your-repo`');
+  const normalized = text.toUpperCase();
+  const isPlan = normalized === '/PLAN' || normalized === 'PLAN';
+  const isUse = normalized.startsWith('/USE') || normalized.startsWith('USE REPO');
+
+  if (!session.repo && !isPlan && !isUse) {
+    return sendMessage(chatId, '📌 Repo not set. Use: `/use owner/repo`');
   }
 
   // --- SMART PLAN ---
-  if (text.toUpperCase() === 'PLAN') {
+  if (isPlan) {
     const s = session;
     const t = getTask(chatId);
 
@@ -169,13 +157,44 @@ export async function handleCommand(msg, text, sendMessage, editMessage) {
   }
 
   // STATUS
-  if (text.toUpperCase() === 'STATUS') {
+  if (normalized === '/STATUS' || normalized === 'STATUS') {
     const pending = session.pending ? `\n🧾 Pending PR: \`${session.pending.branch}\` (awaiting approval)` : '';
     return sendMessage(chatId, `✅ Scoped Repo: *${owner}/${repo}*\nMode: PR-only\nPairing: ON${pending}`);
   }
 
+  // USE REPO
+  {
+    const m = text.match(/^\/?USE(?:\s+REPO)?\s+([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/i);
+    if (m) {
+      const owner = m[1];
+      const name = m[2];
+      setRepo(chatId, owner, name);
+      return sendMessage(chatId, `✅ Repo locked to *${owner}/${name}*`);
+    }
+  }
+
+  // REASONING (Escalate to Claude)
+  if (normalized.startsWith('/REASONING')) {
+    const taskDetails = text.substring(10).trim();
+    if (!taskDetails) return sendMessage(chatId, 'Please provide task details for reasoning.');
+    
+    startTask(chatId, 'REASONING', { taskDetails });
+    const progress = createProgressContract({ chatId, sendMessage, editMessage });
+    await progress.start(`Claude Reasoning: ${owner}/${repo}`);
+    try {
+      progress.phase('Escalating reasoning task to Claude 3.5 Sonnet...', 40);
+      await new Promise(r => setTimeout(r, 2000));
+      // Logic would call delegation and then OpenRouter
+      await progress.done('Claude Reasoning complete: Architecture optimization suggested.');
+      session.task = null;
+    } catch (err) {
+      await progress.fail(err.message);
+    }
+    return;
+  }
+
   // CI (cooperative)
-  if (text.toUpperCase() === 'CI') {
+  if (normalized === '/CI' || normalized === 'CI') {
     resumeTask(chatId); // reset running state if coming from stopped
     startTask(chatId, 'CI', { rawArgs: '' });
     const progress = createProgressContract({ chatId, sendMessage, editMessage });

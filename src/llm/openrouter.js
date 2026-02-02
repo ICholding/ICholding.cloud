@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 
 const API = 'https://openrouter.ai/api/v1/chat/completions';
 
-export async function openrouterChat(messages) {
+export async function openrouterChat(messages, modelOverride = null) {
   const res = await fetch(API, {
     method: 'POST',
     headers: {
@@ -10,7 +10,7 @@ export async function openrouterChat(messages) {
       authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`
     },
     body: JSON.stringify({
-      model: process.env.OPENROUTER_MODEL,
+      model: modelOverride || process.env.OPENROUTER_MODEL,
       messages,
       temperature: 0.2
     })
