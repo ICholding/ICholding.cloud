@@ -74,5 +74,15 @@ export function createProgressContract({
     );
   }
 
-  return { start, phase, done, fail };
+  async function stoppedMethod(msg = 'Stopped. Reply with `CANCEL`, `EDIT …`, or `RESUME`.') {
+    stopped = true;
+    if (timer) clearInterval(timer);
+    if (messageId) {
+      await editMessage(chatId, messageId, `*⏸ ${title} stopped*\n${msg}`);
+    } else {
+      await sendMessage(chatId, `*⏸ ${title} stopped*\n${msg}`);
+    }
+  }
+
+  return { start, phase, done, fail, stopped: stoppedMethod };
 }

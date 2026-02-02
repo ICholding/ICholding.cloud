@@ -5,12 +5,18 @@ const sessions = new Map();
  * {
  *   paired: boolean,
  *   repo: { owner, name } | null,
- *   pending: { branch, title, body, changes: [{path, content, message}] } | null
+ *   pending: { branch, title, body, changes: [{path, content, message}] } | null,
+ *   task: { id, name, status, stopRequested, editedApproach, input } | null
  * }
  */
 export function getSession(chatId) {
   if (!sessions.has(chatId)) {
-    sessions.set(chatId, { paired: false, repo: null, pending: null });
+    sessions.set(chatId, {
+      paired: false,
+      repo: null,
+      pending: null,
+      task: null
+    });
   }
   return sessions.get(chatId);
 }
@@ -23,7 +29,8 @@ export function resetPending(chatId) {
 export function setRepo(chatId, owner, name) {
   const s = getSession(chatId);
   s.repo = { owner, name };
-  s.pending = null; // switching repo clears pending work
+  s.pending = null; 
+  s.task = null; // switching repo clears pending work and tasks
 }
 
 export function setPaired(chatId, paired = true) {
