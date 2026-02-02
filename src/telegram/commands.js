@@ -2,6 +2,7 @@ import { getSession, setPaired, setRepo, setPending, resetPending } from './sess
 import { readFile, listRecentWorkflowRuns } from '../github/repo.js';
 import { createBranchFromDefault, upsertFile, openPullRequest } from '../github/pr.js';
 import { proposePatch } from '../llm/patcher.js';
+import { createProgressContract } from './progressContract.js';
 
 function helpText() {
   return [
@@ -21,7 +22,7 @@ function helpText() {
   ].join('\n');
 }
 
-export async function handleCommand(msg, text, sendMessage) {
+export async function handleCommand(msg, text, sendMessage, editMessage) {
   const chatId = msg.chat.id;
   const session = getSession(chatId);
 

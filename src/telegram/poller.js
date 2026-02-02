@@ -26,6 +26,16 @@ export async function sendMessage(chatId, text) {
   });
 }
 
+export async function editMessage(chatId, messageId, text) {
+  return tg('editMessageText', {
+    chat_id: chatId,
+    message_id: messageId,
+    text,
+    parse_mode: 'Markdown',
+    disable_web_page_preview: true
+  });
+}
+
 export async function startPolling() {
   let offset = 0;
 
@@ -49,7 +59,7 @@ export async function startPolling() {
         const text = normalizeText(msg);
         if (!text) continue;
 
-        await handleCommand(msg, text, sendMessage);
+        await handleCommand(msg, text, sendMessage, editMessage);
       }
     } catch (err) {
       console.error('Polling error:', err?.message || err);
