@@ -49,8 +49,8 @@ export async function handleCommand(msg, text, sendMessage, editMessage) {
     return sendMessage(chatId, '🔐 Pairing required. Reply with: `PAIR`');
   }
 
-  // Repo bind gate
-  if (!session.repo) {
+  // Repo bind gate (Smart PLAN exception)
+  if (!session.repo && text.toUpperCase() !== 'PLAN') {
     const m = text.match(/^USE\s+REPO\s+([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/i);
     if (m) {
       const owner = m[1];
@@ -60,6 +60,74 @@ export async function handleCommand(msg, text, sendMessage, editMessage) {
     }
     return sendMessage(chatId, '📌 Repo not set. Use: `USE REPO ICholding/your-repo`');
   }
+
+  // --- SMART PLAN ---
+  if (text.toUpperCase() === 'PLAN') {
+    const s = session;
+    const t = getTask(chatId);
+
+    const repoBound = !!s.repo;
+    const paired = !!s.paired;
+    const hasPendingPR = !!s.pending;
+
+    const repoLine = repoBound ? `*Repo:* ${s.repo.owner}/${s.repo.name}` : '*Repo:* (not bound)';
+    const pairedLine = `*Paired:* ${paired ? 'yes' : 'no'}`;
+    const taskLine = t ? `*Task:* ${t.name} — _${t.status}_` : '*Task:* none';
+    const editLine = t?.editedApproach ? `*Queued edit:* _${t.editedApproach}_` : '*Queued edit:* none';
+    const pendingLine = hasPendingPR
+      ? `*Pending PR:* \`${s.pending.branch}\`\n*Title:* ${s.pending.title || '(no title)'}`
+      : '*Pending PR:* none';
+
+    // --- Smart next action suggestion ---
+    let next = null;
+    let reason = null;
+
+    if (!paired) {
+      next = '`PAIR`';
+      reason = 'Pairing is required before any task can run.';
+    } else if (!repoBound) {
+      next = '`USE REPO ICholding/<repo>`';
+      reason = 'This chat must be scoped to exactly one repo.';
+    } else if (t && t.status === 'running') {
+      next = '`STOP`';
+      reason = 'A task is currently running. Use STOP to halt, then EDIT/RESUME if needed.';
+    } else if (t && t.status === 'stopped') {
+      if (t.editedApproach) {
+        next = '`RESUME`';
+        reason = 'An updated approach is queued. RESUME restarts from the beginning using it.';
+      } else {
+        next = '`EDIT <new approach>`';
+        reason = 'Task is stopped. EDIT queues a new plan, or CANCEL to drop it.';
+      }
+    } else if (hasPendingPR) {
+      next = `\`APPROVE:PR ${s.pending.branch}\``;
+      reason = 'A PR proposal is ready. Approve to create the branch + PR.';
+    } else {
+      next = '`SCAN`';
+      reason = 'No task running. SCAN is the best starting point for bug hunting.';
+    }
+
+    return sendMessage(
+      chatId,
+      [
+        '🧭 *SMART PLAN*',
+        pairedLine,
+        repoLine,
+        taskLine,
+        editLine,
+        pendingLine,
+        '',
+        '*Next best action:*',
+        `${next}`,
+        `_${reason}_`,
+        '',
+        '*Controls:*',
+        '`STOP`  `CANCEL`  `EDIT <new approach>`  `RESUME`  `CI`  `SCAN`'
+      ].join('\n')
+    );
+  }
+
+  if (!session.repo) return; // safety stop if no repo and not PLAN
 
   const { owner, name: repo } = session.repo;
 
@@ -98,28 +166,6 @@ export async function handleCommand(msg, text, sendMessage, editMessage) {
       if (!ok) return sendMessage(chatId, 'No active task to edit. Start a task first.');
       return sendMessage(chatId, `📝 Noted. Updated approach queued:\n_${newApproach}_\n\nSend \`RESUME\` to restart with this plan.`);
     }
-  }
-
-  // PLAN
-  if (text.toUpperCase() === 'PLAN') {
-    const t = getTask(chatId);
-    const repoLine = `*Repo:* ${owner}/${repo}`;
-    const pairedLine = `*Paired:* yes`;
-    const taskLine = t ? `*Task:* ${t.name} — _${t.status}_` : '*Task:* none';
-    const editLine = t?.editedApproach ? `*Queued edit:* _${t.editedApproach}_` : '*Queued edit:* none';
-    const pendingLine = session.pending ? `*Pending PR:* \`${session.pending.branch}\`\n*Title:* ${session.pending.title}` : '*Pending PR:* none';
-
-    return sendMessage(chatId, [
-        '🧭 *PLAN*',
-        pairedLine,
-        repoLine,
-        taskLine,
-        editLine,
-        pendingLine,
-        '',
-        '*Controls:*',
-        '`STOP`  `CANCEL`  `EDIT <new approach>`  `RESUME`'
-      ].join('\n'));
   }
 
   // STATUS
