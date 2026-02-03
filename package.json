@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "build": "yarn install"
   },
   "dependencies": {
     "@octokit/rest": "^21.0.0",
@@ -13,6 +15,7 @@
     "openclaw": "2026.2.1",
     "openrouter-client": "^1.8.0",
     "telegraf": "^4.16.3",
-    "node-telegram-bot-api": "^0.67.0"
+    "node-telegram-bot-api": "^0.67.0",
+    "yarn": "^1.22.19"
   }
 }

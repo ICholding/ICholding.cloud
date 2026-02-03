@@ -16,28 +16,27 @@ import {
 
 function helpText() {
   return [
-    '*Janitor Commands (single-admin)*',
+    '*Janitor Commands — OpenClaw Mode*',
     '',
-    '/listrepos — list available repositories',
-    '/use <repo> — bind bot to a specific repo',
-    '/plan — display bot/task/PR state',
-    '/status — check repo health',
-    '/scan — run static analysis',
-    '/file <path> — read file content',
-    '/fix <path> | <goal> — propose a fix',
-    '/reasoning <task> — deep analysis',
-    '/openprs — list open pull requests',
-    '/closepr <id> — close a PR',
-    '/commentissue <id> | <text> — comment on an issue',
-    '/approve <branch> — approve a PR',
-    '/find <file> — find a file and report its location',
+    '/listrepos - List available repositories',
+    '/use <repo> - Bind bot to a specific repo',
+    '/plan - Display bot/task/PR state',
+    '/status - Check the health of the repo',
+    '/scan - Run static analysis',
+    '/file <path> - Read file content',
+    '/fix <path> | <goal> - Propose a fix',
+    '/reasoning <task> - Provide analysis',
+    '/openprs - List open PRs',
+    '/closepr <id> - Close a PR',
+    '/commentissue <id> | <text> - Comment on an issue',
+    '/approve <branch> - Approve a PR',
+    '/stop - Pause current task',
+    '/abort - Abort current task',
+    '/continue - Resume paused task',
+    '/find <file> - Find a file and report its location',
     '',
-    '*Task Controls:*',
-    '/stop — pause current task',
-    '/abort — abort current task',
-    '/continue — resume paused task',
-    '/resume — resume from start',
-    '/cancel — clear state'
+    '/resume - Resume from start',
+    '/cancel - Clear state'
   ].join('\n');
 }
 

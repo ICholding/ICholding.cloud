@@ -20,6 +20,9 @@ export default async (ctx) => {
   const progress = createProgressContract({ chatId: ctx.chat.id, sendMessage, editMessage });
 
   try {
+    // Immediate feedback as requested: "Scanning repo: ..."
+    await ctx.reply(`Scanning repo: ${repoName}...`);
+
     await progress.start(`SCAN: ${owner}/${repoName}`);
     
     assertNotStopped(ctx.chat.id);

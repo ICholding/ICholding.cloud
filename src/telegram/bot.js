@@ -6,6 +6,7 @@ import scan from './commands/scan.js';
 import fileRead from './commands/fileRead.js';
 import approvePR from './commands/approvePR.js';
 import findFile from './commands/find.js';
+import help from './commands/help.js';
 import * as taskControls from './commands/taskControls.js';
 import { isAllowedSender } from './security.js';
 
@@ -38,10 +39,7 @@ bot.command('abort', taskControls.abort);
 bot.command('resume', taskControls.resume);
 bot.command('continue', taskControls.resume);
 
-bot.command('help', (ctx) => {
-  // We can call handleCommand manually or just implement a small help
-  ctx.reply('Type /start or refer to the command list in /help.');
-});
+bot.command('help', help);
 
 // Fallback for text without commands (like "EDIT <plan>")
 bot.on('text', async (ctx) => {
