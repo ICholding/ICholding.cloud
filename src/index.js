@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { startPolling } from './telegram/poller.js';
+import { startBot } from './telegram/bot.js';
 
-console.log('✅ Janitor bot starting…');
-await startPolling();
+console.log('✅ Janitor bot starting modular commands…');
+await startBot();
