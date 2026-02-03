@@ -5,6 +5,7 @@ import status from './commands/status.js';
 import scan from './commands/scan.js';
 import fileRead from './commands/fileRead.js';
 import approvePR from './commands/approvePR.js';
+import findFile from './commands/find.js';
 import * as taskControls from './commands/taskControls.js';
 import { isAllowedSender } from './security.js';
 
@@ -30,19 +31,32 @@ bot.command('status', status);
 bot.command('scan', scan);
 bot.command('file', fileRead);
 bot.command('approve', approvePR);
+bot.command('find', findFile);
 bot.command('stop', taskControls.stop);
 bot.command('cancel', taskControls.cancel);
 bot.command('abort', taskControls.abort);
 bot.command('resume', taskControls.resume);
 bot.command('continue', taskControls.resume);
 
+bot.command('help', (ctx) => {
+  // We can call handleCommand manually or just implement a small help
+  ctx.reply('Type /start or refer to the command list in /help.');
+});
+
 // Fallback for text without commands (like "EDIT <plan>")
 bot.on('text', async (ctx) => {
   const text = ctx.message.text.trim();
-  // Pass through to legacy-style logic if we want, or just handle edits
+  
+  if (text.startsWith('/')) {
+    // Unknown command
+    return ctx.reply('Type /help for command list');
+  }
+
   if (text.toUpperCase().startsWith('EDIT ')) {
-    // We could import editTask from taskControl directly here
     ctx.reply('📝 Updated approach noted. (Use /resume to restart with this plan)');
+  } else {
+    // Default reply for random text
+    ctx.reply('Type /help for command list');
   }
 });
 
