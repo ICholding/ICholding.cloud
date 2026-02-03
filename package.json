@@ -8,9 +8,8 @@
   },
   "dependencies": {
     "axios": "^0.24.0",
-    "dingtalk-robot-sdk": "^2.3.0",
-    "openclaw": "^1.2.0",
-    "openrouter": "^0.3.0",
+    "dingtalk-robot-sdk": "^1.0.2",
+    "openai": "^4.0.0",
     "dotenv": "^10.0.0"
   }
 }

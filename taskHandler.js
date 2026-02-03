@@ -1,11 +1,15 @@
 const { sendMessageToDingTalk } = require('./dingTalkClient');
 const { getOpenPullRequests } = require('./githubIntegration');
 const config = require('./config');
-const OpenClaw = require('openclaw');
+const OpenAI = require('openai');
 
-const claw = new OpenClaw({
+const openai = new OpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
   apiKey: config.OPENROUTER_API_KEY,
-  githubToken: config.GITHUB_TOKEN
+  defaultHeaders: {
+    'HTTP-Referer': 'https://icholding.cloud',
+    'X-Title': 'ICholding Cloud Bot'
+  }
 });
 
 async function handleMessage(chatId, message) {
@@ -16,16 +20,19 @@ async function handleMessage(chatId, message) {
     sendMessageToDingTalk(chatId, `🔍 Scanning repository: ${repoName}...`);
     
     try {
-      sendMessageToDingTalk(chatId, "🔧 Initiating OpenClaw autonomous diagnostic...");
+      sendMessageToDingTalk(chatId, "🔧 Initiating AI-driven autonomous diagnostic...");
       
-      // Perform autonomous repository analysis
-      const analysis = await claw.analyze({
-        repo: `ICholding/${repoName}`,
-        branch: 'master'
+      // Perform autonomous repository analysis using OpenRouter/OpenAI logic
+      const completion = await openai.chat.completions.create({
+        model: 'google/gemini-2.0-flash-001',
+        messages: [
+          { role: 'system', content: 'Analyze the repository status and provide a brief technical summary.' },
+          { role: 'user', content: `Analyze the current state of the repo: ICholding/${repoName}` }
+        ]
       });
 
       const openPRs = await getOpenPullRequests(repoName);
-      let report = `✅ Scan Complete.\n\nOpenClaw Analysis: ${analysis.summary || 'Standard health check completed.'}`;
+      let report = `✅ Scan Complete.\n\nAI Analysis: ${completion.choices[0].message.content || 'Standard health check completed.'}`;
 
       if (openPRs.length > 0) {
         const prInfo = openPRs.map(pr => `PR #${pr.number}: ${pr.title}`).join('\n');

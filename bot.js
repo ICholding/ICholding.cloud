@@ -1,4 +1,4 @@
-const DingTalkBot = require('dingtalk-bot-sdk');
+const DingTalkBot = require('dingtalk-robot-sdk');
 const { handleMessage } = require('./taskHandler');
 const config = require('./config');
 
