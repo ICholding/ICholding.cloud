@@ -1,6 +1,12 @@
 const { sendMessageToDingTalk } = require('./dingTalkClient');
 const { getOpenPullRequests } = require('./githubIntegration');
 const config = require('./config');
+const OpenClaw = require('openclaw');
+
+const claw = new OpenClaw({
+  apiKey: config.OPENROUTER_API_KEY,
+  githubToken: config.GITHUB_TOKEN
+});
 
 async function handleMessage(chatId, message) {
   const text = message.toLowerCase();
@@ -10,15 +16,26 @@ async function handleMessage(chatId, message) {
     sendMessageToDingTalk(chatId, `🔍 Scanning repository: ${repoName}...`);
     
     try {
+      sendMessageToDingTalk(chatId, "🔧 Initiating OpenClaw autonomous diagnostic...");
+      
+      // Perform autonomous repository analysis
+      const analysis = await claw.analyze({
+        repo: `ICholding/${repoName}`,
+        branch: 'master'
+      });
+
       const openPRs = await getOpenPullRequests(repoName);
+      let report = `✅ Scan Complete.\n\nOpenClaw Analysis: ${analysis.summary || 'Standard health check completed.'}`;
+
       if (openPRs.length > 0) {
         const prInfo = openPRs.map(pr => `PR #${pr.number}: ${pr.title}`).join('\n');
-        sendMessageToDingTalk(chatId, `✅ Scan Complete. Open Pull Requests:\n${prInfo}`);
-      } else {
-        sendMessageToDingTalk(chatId, '✅ Scan Complete. No open pull requests found.');
+        report += `\n\nOpen Pull Requests:\n${prInfo}`;
       }
+
+      sendMessageToDingTalk(chatId, report);
     } catch (error) {
-      sendMessageToDingTalk(chatId, '❌ Error during scan. Check logs.');
+      console.error(error);
+      sendMessageToDingTalk(chatId, '❌ Error during OpenClaw scan. Check system logs.');
     }
   } else if (text.includes('help')) {
     const helpMessage = `
