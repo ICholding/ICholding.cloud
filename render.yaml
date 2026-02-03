@@ -1,19 +1,19 @@
 services:
   - type: worker
-    name: openclaw-telegram-bot
+    name: icholding-dingtalk-bot
     env: node
     plan: starter
-    buildCommand: "npm install"
-    startCommand: "bash scripts/start.sh"
+    buildCommand: "yarn install"
+    startCommand: "node bot.js"
     autoDeploy: true
     envVars:
-      - key: TELEGRAM_BOT_TOKEN
+      - key: DINGTALK_API_KEY
+        sync: false
+      - key: DINGTALK_SECRET
         sync: false
       - key: GITHUB_TOKEN
         sync: false
       - key: OPENROUTER_API_KEY
         sync: false
-      - key: OPENROUTER_MODEL
-        value: "openai/gpt-4o"
-      - key: NODE_VERSION
-        value: "20"
+      - key: GITHUB_REPO_NAME
+        value: "ICholding.cloud"
