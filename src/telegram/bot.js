@@ -32,7 +32,9 @@ bot.command('file', fileRead);
 bot.command('approve', approvePR);
 bot.command('stop', taskControls.stop);
 bot.command('cancel', taskControls.cancel);
+bot.command('abort', taskControls.abort);
 bot.command('resume', taskControls.resume);
+bot.command('continue', taskControls.resume);
 
 // Fallback for text without commands (like "EDIT <plan>")
 bot.on('text', async (ctx) => {

@@ -1,6 +1,7 @@
 import { getSession } from '../sessions.js';
 import { createProgressContract } from '../progressContract.js';
 import { startTask, assertNotStopped } from '../taskControl.js';
+import { CONFIG } from '../config.js';
 
 export default async (ctx) => {
   const session = getSession(ctx.chat.id);
@@ -22,16 +23,32 @@ export default async (ctx) => {
     await progress.start(`SCAN: ${owner}/${repoName}`);
     
     assertNotStopped(ctx.chat.id);
-    progress.phase('Initializing static analysis...', 20);
-    await new Promise(r => setTimeout(r, 2000));
-    
-    assertNotStopped(ctx.chat.id);
-    progress.phase('Auditing dependencies...', 50);
-    await new Promise(r => setTimeout(r, 2000));
+    progress.phase(`${CONFIG.emojis.working} Working...`, 10);
+    await new Promise(r => setTimeout(r, 1000));
 
     assertNotStopped(ctx.chat.id);
-    progress.phase('Scanning for secrets and debt...', 80);
+    progress.phase(`${CONFIG.emojis.searching} Searching...`, 30);
     await new Promise(r => setTimeout(r, 1500));
+
+    assertNotStopped(ctx.chat.id);
+    // Cool off simulation
+    await progress.coolOff();
+    
+    assertNotStopped(ctx.chat.id);
+    progress.phase(`${CONFIG.emojis.reading} Reading file...`, 50);
+    await new Promise(r => setTimeout(r, 1500));
+
+    assertNotStopped(ctx.chat.id);
+    progress.phase(`${CONFIG.emojis.analyzing} Analyzing findings...`, 70);
+    await new Promise(r => setTimeout(r, 1500));
+
+    assertNotStopped(ctx.chat.id);
+    progress.phase(`${CONFIG.emojis.strategy} Devising strategy...`, 90);
+    await new Promise(r => setTimeout(r, 1500));
+
+    assertNotStopped(ctx.chat.id);
+    progress.phase(`${CONFIG.emojis.notes} Creating notes...`, 95);
+    await new Promise(r => setTimeout(r, 1000));
 
     session.task = null;
     await progress.done(`Scan completed for repository: *${repoName}*\nNo critical issues found.`);

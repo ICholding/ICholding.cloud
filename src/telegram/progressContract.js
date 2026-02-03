@@ -8,13 +8,15 @@
  * fail(error)          -> final failure message (replaces spinner)
  */
 
+import { CONFIG } from './config.js';
+
 const FRAMES = ['◐', '◓', '◑', '◒'];
 
 export function createProgressContract({
   chatId,
   sendMessage,
   editMessage,
-  throttleMs = 1200
+  throttleMs = CONFIG.throttleMs
 }) {
   let messageId = null;
   let frameIndex = 0;
@@ -74,7 +76,7 @@ export function createProgressContract({
     );
   }
 
-  async function stoppedMethod(msg = 'Stopped. Reply with `CANCEL`, `EDIT …`, or `RESUME`.') {
+  async function stoppedMethod(msg = 'Stopped. Reply with `/cancel`, `EDIT …`, or `/resume`.') {
     stopped = true;
     if (timer) clearInterval(timer);
     if (messageId) {
@@ -84,5 +86,13 @@ export function createProgressContract({
     }
   }
 
-  return { start, phase, done, fail, stopped: stoppedMethod };
+  async function coolOff() {
+    const originalPhase = phaseText;
+    const originalPercent = percent;
+    phase(`${CONFIG.emojis.cooloff} Cool off dodging MCP police...`, originalPercent);
+    await new Promise(r => setTimeout(r, CONFIG.cooldownMs));
+    phase(originalPhase, originalPercent);
+  }
+
+  return { start, phase, done, fail, stopped: stoppedMethod, coolOff };
 }

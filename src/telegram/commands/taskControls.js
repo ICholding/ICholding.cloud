@@ -11,6 +11,11 @@ export const cancel = async (ctx) => {
   ctx.reply(ok ? '🧯 Task cancelled and workspace cleared.' : 'No active task to cancel.');
 };
 
+export const abort = async (ctx) => {
+  const ok = cancelTask(ctx.chat.id);
+  ctx.reply(ok ? '🛑 Task aborted.' : 'No active task to abort.');
+};
+
 export const resume = async (ctx) => {
   const task = getTask(ctx.chat.id);
   if (!task || task.status !== 'stopped') return ctx.reply('No stopped task to resume.');
