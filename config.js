@@ -1,11 +1,12 @@
 require('dotenv').config();
 
 const config = {
+  DINGTALK_APP_KEY: process.env.DINGTALK_APP_KEY,
+  DINGTALK_APP_SECRET: process.env.DINGTALK_APP_SECRET,
+  DINGTALK_AGENT_ID: process.env.DINGTALK_AGENT_ID,
   GITHUB_TOKEN: process.env.GITHUB_TOKEN,
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
-  DINGTALK_API_KEY: process.env.DINGTALK_API_KEY,
-  DINGTALK_SECRET: process.env.DINGTALK_SECRET,
-  GITHUB_REPO_NAME: process.env.GITHUB_REPO_NAME,
+  GITHUB_REPO_NAME: process.env.GITHUB_REPO_NAME || 'ICholding.cloud',
 };
 
 module.exports = config;

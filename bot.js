@@ -1,26 +1,23 @@
 const DingTalkBot = require('dingtalk-bot-sdk');
-const { handleFind, scanRepo, showHelp, sendMessage } = require('./taskHandler');
+const { handleMessage } = require('./taskHandler');
 const config = require('./config');
 
+// Initialize DingTalk Bot using App Key/Secret context
 const bot = new DingTalkBot({
-  token: config.DINGTALK_API_KEY,
-  secret: config.DINGTALK_SECRET,
+  token: config.DINGTALK_APP_KEY,
+  secret: config.DINGTALK_APP_SECRET,
 });
 
 bot.on('message', async (message) => {
-  const chatId = message.chatId; // Adjusted for dingtalk-bot-sdk
-  const text = message.text.content.trim().toLowerCase();
+  const chatId = message.conversationId || (message.chat && message.chat.id);
+  const text = (message.text && message.text.content) ? message.text.content.trim() : '';
 
-  if (text.includes('scan') && text.includes('repo')) {
-    await scanRepo(chatId);
-  } else if (text.includes('find') && text.includes('file')) {
-    const fileName = text.split('file')[1]?.trim();
-    await handleFind(chatId, fileName);
-  } else if (text.includes('help')) {
-    await showHelp(chatId);
-  } else {
-    await sendMessage(chatId, "Sorry, I didn’t catch that. Type 'help' to see what I can do!");
+  if (text) {
+    await handleMessage(chatId, text);
   }
 });
 
-module.exports = { bot };
+console.log('🚀 DingTalk Bot Lifecycle Started...');
+if (typeof bot.start === 'function') {
+  bot.start();
+}
