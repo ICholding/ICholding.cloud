@@ -2,9 +2,9 @@ const DingTalkBot = require('dingtalk-robot-sdk');
 const { handleMessage } = require('./taskHandler');
 const config = require('./config');
 
-// Initialize DingTalk Bot using App Key/Secret context
+// Initialize DingTalk Bot
 const bot = new DingTalkBot({
-  token: config.DINGTALK_APP_KEY,
+  accessToken: config.DINGTALK_ACCESS_TOKEN || config.DINGTALK_APP_KEY,
   secret: config.DINGTALK_APP_SECRET,
 });
 
