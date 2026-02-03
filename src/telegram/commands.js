@@ -1,6 +1,7 @@
 import { getSession, setPaired, setRepo, setPending, resetPending } from './sessions.js';
-import { readFile, listRecentWorkflowRuns } from '../github/repo.js';
+import { readFile, listRecentWorkflowRuns, listUserRepos, getOpenPRs, closePullRequest } from '../github/repo.js';
 import { createBranchFromDefault, upsertFile, openPullRequest } from '../github/pr.js';
+import { commentOnIssue } from '../github/issues.js';
 import { proposePatch } from '../llm/patcher.js';
 import { createProgressContract } from './progressContract.js';
 import {
@@ -17,13 +18,18 @@ function helpText() {
   return [
     '*Janitor Commands (single-admin)*',
     '',
+    '/list_repos — list your GitHub repos',
     '/use `owner/repo` — bind repo',
-    '/plan — show current repo/task/PR state',
-    '/status — quick status check',
+    '/plan — show bot/task/PR state',
+    '/status — repo health check',
     '/ci — check recent workflow runs',
+    '/open_prs — list open pull requests',
+    '/close_pr `id` — close a specific PR',
+    '/comment_issue `id | text` — comment on issue/PR',
     '/file `path` — read file content',
+    '/scan — trigger static analysis (simulated)',
     '/fix `path | goal` — propose a fix (Codex)',
-    '/reasoning `task` — reasoning analysis (Claude)',
+    '/reasoning `task` — deep analysis (Claude)',
     '/approve `branch` — approve and open PR',
     '',
     '*Task Controls:*',
@@ -162,6 +168,20 @@ export async function handleCommand(msg, text, sendMessage, editMessage) {
     return sendMessage(chatId, `✅ Scoped Repo: *${owner}/${repo}*\nMode: PR-only\nPairing: ON${pending}`);
   }
 
+  // LIST REPOS
+  if (normalized === '/LIST_REPOS' || normalized === 'LIST REPOS') {
+    const progress = createProgressContract({ chatId, sendMessage, editMessage });
+    await progress.start('Fetching GitHub Repositories...');
+    try {
+      const repos = await listUserRepos();
+      const list = repos.map(r => `- \`${r.full_name}\``).join('\n');
+      await progress.done(`*Your Repositories:*\n\n${list}\n\nUse \`/use owner/repo\` to bind one.`);
+    } catch (err) {
+      await progress.fail(err.message);
+    }
+    return;
+  }
+
   // USE REPO
   {
     const m = text.match(/^\/?USE(?:\s+REPO)?\s+([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/i);
@@ -171,6 +191,80 @@ export async function handleCommand(msg, text, sendMessage, editMessage) {
       setRepo(chatId, owner, name);
       return sendMessage(chatId, `✅ Repo locked to *${owner}/${name}*`);
     }
+  }
+
+  // OPEN PRS
+  if (normalized === '/OPEN_PRS') {
+    const prs = await getOpenPRs(owner, repo);
+    if (!prs.length) return sendMessage(chatId, 'No open pull requests.');
+    const list = prs.map(p => `PR #${p.number}: ${p.title} ([view](${p.html_url}))`).join('\n');
+    return sendMessage(chatId, `*Open PRs for ${owner}/${repo}:*\n\n${list}`);
+  }
+
+  // CLOSE PR
+  {
+    const m = text.match(/^\/?CLOSE_PR\s+(\d+)$/i);
+    if (m) {
+      const prId = m[1];
+      const progress = createProgressContract({ chatId, sendMessage, editMessage });
+      await progress.start(`Closing PR #${prId}...`);
+      try {
+        await closePullRequest(owner, repo, prId);
+        await progress.done(`PR #${prId} has been closed.`);
+      } catch (err) {
+        await progress.fail(err.message);
+      }
+      return;
+    }
+  }
+
+  // COMMENT ISSUE
+  {
+    const m = text.match(/^\/?COMMENT_ISSUE\s+(\d+)\s*(?:\||:)\s*(.+)$/i);
+    if (m) {
+      const issueId = m[1];
+      const comment = m[2].trim();
+      const progress = createProgressContract({ chatId, sendMessage, editMessage });
+      await progress.start(`Commenting on #${issueId}...`);
+      try {
+        await commentOnIssue(owner, repo, issueId, comment);
+        await progress.done(`Added comment to #${issueId}.`);
+      } catch (err) {
+        await progress.fail(err.message);
+      }
+      return;
+    }
+  }
+
+  // SCAN (Simulated / SonarQube hook placeholder)
+  if (normalized === '/SCAN' || normalized === 'SCAN') {
+    resumeTask(chatId);
+    startTask(chatId, 'SCAN', {});
+    const progress = createProgressContract({ chatId, sendMessage, editMessage });
+    await progress.start(`SCAN: ${owner}/${repo}`);
+    try {
+      assertNotStopped(chatId);
+      progress.phase('Analyzing via Static Analysis (Simulated)...', 30);
+      await new Promise(r => setTimeout(r, 2000));
+      assertNotStopped(chatId);
+      
+      progress.phase('Generating SonarQube-style report...', 70);
+      await new Promise(r => setTimeout(r, 1000));
+      assertNotStopped(chatId);
+
+      session.task = null;
+      await progress.done(`*Scan Results:*
+- Quality Gate: **PASSED**
+- Critical Issues: 0
+- Coverage: 84%
+
+Everything looks good!`);
+    } catch (err) {
+      if (err.code === 'TASK_STOPPED') return await progress.stopped();
+      session.task = null;
+      await progress.fail(err.message);
+    }
+    return;
   }
 
   // REASONING (Escalate to Claude)

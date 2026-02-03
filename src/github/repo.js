@@ -31,3 +31,39 @@ export async function listRecentWorkflowRuns(owner, repo) {
   });
   return data.workflow_runs || [];
 }
+
+/**
+ * Lists repositories for the authenticated user.
+ */
+export async function listUserRepos() {
+  const { data } = await octokit.repos.listForAuthenticatedUser({
+    sort: 'pushed',
+    per_page: 20
+  });
+  return data;
+}
+
+/**
+ * Fetches open pull requests for a repository.
+ */
+export async function getOpenPRs(owner, repo) {
+  const { data } = await octokit.pulls.list({
+    owner,
+    repo,
+    state: 'open'
+  });
+  return data;
+}
+
+/**
+ * Closes a pull request.
+ */
+export async function closePullRequest(owner, repo, pull_number) {
+  const { data } = await octokit.pulls.update({
+    owner,
+    repo,
+    pull_number,
+    state: 'closed'
+  });
+  return data;
+}
