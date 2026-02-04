@@ -1,0 +1,27 @@
+name: Build Linux Desktop Simulator
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Build Debug APK
+        run: |
+          cd mobile-desktop-sim
+          chmod +x ../gradlew || true
+          # Note: Attempting to use a generic gradlew or assuming one exists in repo
+          # Since we are creating a new folder, we'll use a standard build strategy
+          ./gradlew assembleDebug || (wget https://services.gradle.org/distributions/gradle-8.5-bin.zip && unzip gradle-8.5-bin.zip && ./gradle-8.5/bin/gradle assembleDebug)
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-desktop-sim
+          path: mobile-desktop-sim/app/build/outputs/apk/debug/*.apk
